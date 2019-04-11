@@ -13,10 +13,13 @@
 #include "pubkey.h"
 #include "script/script.h"
 #include "uint256.h"
+#include <chainparams.h>
+#include <chain.h>
 
 using namespace std;
 
 typedef vector<unsigned char> valtype;
+extern CChain chainActive;
 
 namespace {
 
@@ -181,27 +184,53 @@ bool static IsDefinedHashtypeSignature(const valtype &vchSig) {
     if (vchSig.size() == 0) {
         return false;
     }
-    unsigned char nHashType = vchSig[vchSig.size() - 1] & (~(SIGHASH_ANYONECANPAY));
+    unsigned char nHashType = vchSig[vchSig.size() - 1] & (~(SIGHASH_ANYONECANPAY | SIGHASH_FORKID));
     if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
         return false;
 
     return true;
 }
 
-bool static CheckSignatureEncoding(const valtype &vchSig, unsigned int flags, ScriptError* serror) {
+bool static CheckSignatureEncoding(const valtype &vchSig, unsigned int flags, ScriptError* serror) 
+{
     // Empty signature. Not strictly DER encoded, but allowed to provide a
     // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
-    if (vchSig.size() == 0) {
+    if (vchSig.size() == 0) 
+	{
         return true;
     }
-    if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC)) != 0 && !IsValidSignatureEncoding(vchSig)) {
+    
+	if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC)) != 0 && !IsValidSignatureEncoding(vchSig)) 
+	{
         return set_error(serror, SCRIPT_ERR_SIG_DER);
-    } else if ((flags & SCRIPT_VERIFY_LOW_S) != 0 && !IsLowDERSignature(vchSig, serror)) {
+	} 
+	else if ((flags & SCRIPT_VERIFY_LOW_S) != 0 && !IsLowDERSignature(vchSig, serror)) 
+	{
         // serror is set
         return false;
-    } else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 && !IsDefinedHashtypeSignature(vchSig)) {
-        return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
+	} 
+	else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0)
+	{
+        if(!IsDefinedHashtypeSignature(vchSig)) 
+            return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
+        
+		if (Params().GetConsensus(chainActive.Height()+1).fAllowDTPHardFork)
+		{
+			bool usesForkId = vchSig[vchSig.size() - 1] & SIGHASH_FORKID;
+			bool forkIdEnabled = flags & SCRIPT_ENABLE_SIGHASH_FORKID;
+
+			if (!forkIdEnabled && usesForkId)
+			{
+				return set_error(serror, SCRIPT_ERR_ILLEGAL_FORKID);
+			}
+
+			if (forkIdEnabled && !usesForkId)
+			{
+				return set_error(serror, SCRIPT_ERR_MUST_USE_FORKID);
+			}
+		}
     }
+
     return true;
 }
 
@@ -795,6 +824,23 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     // Subset of script starting at the most recent codeseparator
                     CScript scriptCode(pbegincodehash, pend);
 
+                    // Drop the signature in scripts when SIGHASH_FORKID is not used.
+					if (Params().GetConsensus(chainActive.Height()).fAllowDTPHardFork)
+                    {
+                        if (!(vchSig[vchSig.size() - 1] & SIGHASH_FORKID)) 
+						{
+                            //scriptCode.FindAndDelete(CScript(vchSig));
+							return set_error(serror, SCRIPT_ERR_CHECKSIGVERIFY);
+                        }
+                    }
+					else
+                    {
+                        if (vchSig[vchSig.size() - 1] & SIGHASH_FORKID) 
+						{
+                            return set_error(serror, SCRIPT_ERR_CHECKSIGVERIFY);
+                        }
+                    }
+
                     // Drop the signature, since there's no way for a signature to sign itself
                     scriptCode.FindAndDelete(CScript(vchSig));
 
@@ -852,8 +898,24 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                     for (int k = 0; k < nSigsCount; k++)
                     {
                         valtype& vchSig = stacktop(-isig-k);
-                        scriptCode.FindAndDelete(CScript(vchSig));
+						if (Params().GetConsensus(chainActive.Height()).fAllowDTPHardFork)
+                        {
+                            if (!(vchSig[vchSig.size() - 1] & SIGHASH_FORKID )) 
+                            {
+                                //scriptCode.FindAndDelete(CScript(vchSig));
+								return set_error(serror, SCRIPT_ERR_CHECKSIGVERIFY);
+                            }
+                        }
+						else
+                        {
+                            if (vchSig[vchSig.size() - 1] & SIGHASH_FORKID) 
+							{
+                                //scriptCode.FindAndDelete(CScript(vchSig));
+								return set_error(serror, SCRIPT_ERR_CHECKSIGVERIFY);
+                            }
+                        }
                     }
+
 
                     bool fSuccess = true;
                     while (fSuccess && nSigsCount > 0)
@@ -1033,7 +1095,7 @@ public:
 
 } // anon namespace
 
-uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType)
+uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType,	uint32_t flags)
 {
     static const uint256 one(uint256S("0000000000000000000000000000000000000000000000000000000000000001"));
     if (nIn >= txTo.vin.size()) {
@@ -1055,6 +1117,11 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
     ss << txTmp << nHashType;
+    if((nHashType & SIGHASH_FORKID) && (flags & SCRIPT_ENABLE_SIGHASH_FORKID))
+    {
+    	std::string dtp_flags = "dtp";
+    	ss<<dtp_flags;
+    }
     return ss.GetHash();
 }
 
@@ -1087,6 +1154,11 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn
 bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, unsigned int flags, const BaseSignatureChecker& checker, ScriptError* serror)
 {
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
+
+    // If FORKID is enabled, we also ensure strict encoding.
+    if (flags & SCRIPT_ENABLE_SIGHASH_FORKID) {
+        flags |= SCRIPT_VERIFY_STRICTENC;
+    }
 
     if ((flags & SCRIPT_VERIFY_SIGPUSHONLY) != 0 && !scriptSig.IsPushOnly()) {
         return set_error(serror, SCRIPT_ERR_SIG_PUSHONLY);

@@ -16,6 +16,9 @@
 using namespace std;
 
 #include "chainparamsseeds.h"
+#include <chain.h>
+
+CChain chainActive;
 
 /**
  * Main network
@@ -32,13 +35,20 @@ class CMainParams : public CChainParams {
 protected:
     Consensus::Params digishieldConsensus;
     Consensus::Params auxpowConsensus;
+	Consensus::Params inflationConsensus;
+	Consensus::Params dtpforkSuperBlockConsensus;
+	Consensus::Params dtpforkConsensus;
+	Consensus::Params dtpDeflationConsensus;
 public:
     CMainParams() {
         strNetworkID = "main";
 
         // Blocks 0 - 144999 are conventional difficulty calculation
-        consensus.nSubsidyHalvingInterval = 100000;
-        consensus.nMajorityEnforceBlockUpgrade = 1500;
+		consensus.nSubsidyAdjustThrehold	= 0;
+		consensus.nSubsidyAdjustInterval	= 100000;
+		consensus.flSubsidyAdjustBaseRate	= 0.5f;
+		consensus.nSubsidyInitRewards		= 1000000;
+		consensus.nMajorityEnforceBlockUpgrade = 1500;
         consensus.nMajorityRejectBlockOutdated = 1900;
         consensus.nMajorityWindow = 2000;
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
@@ -51,12 +61,15 @@ public:
         consensus.fStrictChainId = true;
         consensus.fAllowLegacyBlocks = true;
         consensus.fAllowAuxPow = false;
+		consensus.fAllowDTPHardFork = false;
+		consensus.fAllowDTPSuperBlock = false;
         consensus.nHeightEffective = 0;
         consensus.fDigishieldDifficultyCalculation = false;
         consensus.nCoinbaseMaturity = 30;
 
         // Blocks 145000 - 371336 are Digishield without AuxPoW
         digishieldConsensus = consensus;
+		digishieldConsensus.nSubsidyInitRewards = 500000;
         digishieldConsensus.nHeightEffective = 145000;
         digishieldConsensus.fSimplifiedRewards = true;
         digishieldConsensus.fDigishieldDifficultyCalculation = true;
@@ -69,10 +82,43 @@ public:
         auxpowConsensus.fAllowLegacyBlocks = false;
         auxpowConsensus.fAllowAuxPow = true;
 
+		// Blocks 600000 - 2199999 are constant inflation rewards
+		inflationConsensus = auxpowConsensus;
+		inflationConsensus.nHeightEffective			= 600000;
+		inflationConsensus.flSubsidyAdjustBaseRate	= 1.0f;
+		inflationConsensus.nSubsidyInitRewards		= 10000;
+
+		// Blocks 2123456 is the super block for DTP hard fork coin
+		dtpforkSuperBlockConsensus = inflationConsensus;
+		dtpforkSuperBlockConsensus.nHeightEffective		= 2123456;
+		dtpforkSuperBlockConsensus.nSubsidyInitRewards	= 300000000;
+		dtpforkSuperBlockConsensus.fAllowDTPHardFork	= true;
+		dtpforkSuperBlockConsensus.fAllowDTPSuperBlock	= true;
+
+		// Blocks 2123457+ are DTP hard fork coin
+		dtpforkConsensus = dtpforkSuperBlockConsensus;
+		dtpforkConsensus.nHeightEffective	= 2123457;
+		dtpforkConsensus.nSubsidyInitRewards= 10000;
+		dtpforkConsensus.fAllowDTPSuperBlock= false;
+
+		// Blocks 2200000+ are DTP with 80% deflation rewards
+		dtpDeflationConsensus = dtpforkSuperBlockConsensus;
+		dtpDeflationConsensus.nHeightEffective			= 2200000;
+		dtpDeflationConsensus.nSubsidyAdjustThrehold	= 2200000;
+		dtpDeflationConsensus.flSubsidyAdjustBaseRate	= 0.8f;
+		dtpDeflationConsensus.nSubsidyInitRewards		= 8000;
+
         // Assemble the binary search tree of consensus parameters
-        pConsensusRoot = &digishieldConsensus;
-        digishieldConsensus.pLeft = &consensus;
-        digishieldConsensus.pRight = &auxpowConsensus;
+        pConsensusRoot				= &digishieldConsensus;
+
+        digishieldConsensus.pLeft	= &consensus;
+		digishieldConsensus.pRight	= &inflationConsensus;
+
+		inflationConsensus.pLeft	= &auxpowConsensus;
+		inflationConsensus.pRight	= &dtpforkConsensus;
+
+		dtpforkConsensus.pLeft		= &dtpforkSuperBlockConsensus;
+		dtpforkConsensus.pRight		= &dtpDeflationConsensus;
 
         /** 
          * The message start string is designed to be unlikely to occur in normal data.
@@ -120,10 +166,7 @@ public:
         assert(consensus.hashGenesisBlock == uint256S("0x1a91e3dace36e2be3bf030a65679fe821aa1d6ef92e7c9902eb318182c355691"));
         assert(genesis.hashMerkleRoot == uint256S("0x5b2a3f53f605d62c53e62932dac6925e3d74afa5a4b459745c36d42d0ed26a69"));
 
-        vSeeds.push_back(CDNSSeedData("dogecoin.com", "seed.dogecoin.com"));
-        vSeeds.push_back(CDNSSeedData("multidoge.org", "seed.multidoge.org"));
-        vSeeds.push_back(CDNSSeedData("multidoge.org", "seed2.multidoge.org"));
-        vSeeds.push_back(CDNSSeedData("doger.dogecoin.com", "seed.doger.dogecoin.com"));
+        vSeeds.push_back(CDNSSeedData("dogetip.org", "seed.dogetip.org"));
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,30);  // 0x1e
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,22);  // 0x16
@@ -131,12 +174,10 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x02)(0xfa)(0xca)(0xfd).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x02)(0xfa)(0xc3)(0x98).convert_to_container<std::vector<unsigned char> >();
 
-        //TODO: fix this for dogecoin -- plddr
-        //vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
-        vFixedSeeds.clear();
+        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
         fRequireRPCPassword = true;
-        fMiningRequiresPeers = true;
+        fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
@@ -157,10 +198,11 @@ public:
             ( 450000, uint256S("0xd279277f8f846a224d776450aa04da3cf978991a182c6f3075db4c48b173bbd7"))
             ( 550000, uint256S("0xea8ed5430b221549a6a26f104b424ffd782ff4c8409bbbc5eaf3d83932825691"))
             ( 650000, uint256S("0x486fcebc9a7288676a7614e1b6fd085d5d71019aead17d354a8bc2c3fde516e9"))
-            ( 771275, uint256S("0x1b7d789ed82cbdc640952e7e7a54966c6488a32eaad54fc39dff83f310dbaaed")),
+			( 771275, uint256S("0x1b7d789ed82cbdc640952e7e7a54966c6488a32eaad54fc39dff83f310dbaaed"))
+			(2123456, uint256S("0xce8df742095094c6b59d326e42db9719d47ab0b88461a4b112224b10b6bd044c")),
 
-            1435666139, // * UNIX timestamp of last checkpoint block
-            19567197,   // * total number of transactions between genesis and last checkpoint
+			1520511876, // * UNIX timestamp of last checkpoint block
+			34911862,   // * total number of transactions between genesis and last checkpoint
                         //   (the tx=... number in the SetBestChain debug.log lines)
             13000.0     // * estimated number of transactions per day after checkpoint
         };
@@ -191,6 +233,7 @@ public:
         consensus.nHeightEffective = 0;
         consensus.fAllowLegacyBlocks = true;
         consensus.fAllowAuxPow = false;
+		consensus.fAllowDTPHardFork = false;
 
         // Reset links before we copy parameters
         consensus.pLeft = NULL;
@@ -218,11 +261,17 @@ public:
         auxpowConsensus.fAllowLegacyBlocks = false;
         auxpowConsensus.fAllowAuxPow = true;
 
+		// Blocks 2088888+ are DTP hard fork coin
+		dtpforkSuperBlockConsensus = auxpowConsensus;
+		dtpforkSuperBlockConsensus.nHeightEffective = 2088888;
+		dtpforkSuperBlockConsensus.fAllowDTPHardFork = true;
+
         // Assemble the binary search tree of parameters
         pConsensusRoot = &digishieldConsensus;
         digishieldConsensus.pLeft = &consensus;
         digishieldConsensus.pRight = &minDifficultyConsensus;
         minDifficultyConsensus.pRight = &auxpowConsensus;
+		auxpowConsensus.pRight = &dtpforkSuperBlockConsensus;
 
         pchMessageStart[0] = 0xfc;
         pchMessageStart[1] = 0xc1;
@@ -285,7 +334,7 @@ class CRegTestParams : public CTestNetParams {
 public:
     CRegTestParams() {
         strNetworkID = "regtest";
-        consensus.nSubsidyHalvingInterval = 150;
+		consensus.nSubsidyAdjustInterval = 150;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
@@ -382,7 +431,9 @@ void SelectParams(CBaseChainParams::Network network) {
 bool SelectParamsFromCommandLine()
 {
     CBaseChainParams::Network network = NetworkIdFromCommandLine();
-    if (network == CBaseChainParams::MAX_NETWORK_TYPES)
+	if (network == CBaseChainParams::TESTNET ||				// 2018.03.22 not available 
+		network == CBaseChainParams::REGTEST ||				// 2018.03.22 not available 
+		network == CBaseChainParams::MAX_NETWORK_TYPES)
         return false;
 
     SelectParams(network);

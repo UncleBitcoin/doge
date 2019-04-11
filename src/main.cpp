@@ -39,7 +39,7 @@
 using namespace std;
 
 #if defined(NDEBUG)
-# error "Dogecoin cannot be compiled without assertions."
+# error "Dogetip cannot be compiled without assertions."
 #endif
 
 /**
@@ -49,7 +49,7 @@ using namespace std;
 CCriticalSection cs_main;
 
 BlockMap mapBlockIndex;
-CChain chainActive;
+//CChain chainActive;
 CBlockIndex *pindexBestHeader = NULL;
 int64_t nTimeBestReceived = 0;
 CWaitableCriticalSection csBestBlock;
@@ -1219,19 +1219,6 @@ bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex)
     return ReadBlockOrHeader(block, pindex);
 }
 
-CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
-{
-    int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
-    // Force block reward to zero when right shift is undefined.
-    if (halvings >= 64)
-        return 0;
-
-    CAmount nSubsidy = 50 * COIN;
-    // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= halvings;
-    return nSubsidy;
-}
-
 bool IsInitialBlockDownload()
 {
     const CChainParams& chainParams = Params();
@@ -2094,7 +2081,8 @@ void PruneAndFlush() {
 }
 
 /** Update chainActive and related internal data structures. */
-void static UpdateTip(CBlockIndex *pindexNew) {
+void static UpdateTip(CBlockIndex *pindexNew) 
+{
     const CChainParams& chainParams = Params();
     chainActive.SetTip(pindexNew);
 
@@ -2102,10 +2090,16 @@ void static UpdateTip(CBlockIndex *pindexNew) {
     nTimeBestReceived = GetTime();
     mempool.AddTransactionsUpdated(1);
 
-    LogPrintf("%s: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", __func__,
-      chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
-      DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-      Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip()), pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
+    LogPrintf("%s: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", 
+			  __func__,
+			  chainActive.Tip()->GetBlockHash().ToString(), 
+			  chainActive.Height(), 
+			  log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), 
+			  (unsigned long)chainActive.Tip()->nChainTx,
+			  DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
+			  Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip()), 
+			  pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), 
+			  pcoinsTip->GetCacheSize());
 
     cvBlockChange.notify_all();
 
@@ -2184,19 +2178,24 @@ static int64_t nTimePostConnect = 0;
  * Connect a new block to chainActive. pblock is either NULL or a pointer to a CBlock
  * corresponding to pindexNew, to bypass loading it again from disk.
  */
-bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *pblock) {
+bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *pblock) 
+{
     assert(pindexNew->pprev == chainActive.Tip());
     mempool.check(pcoinsTip);
+
     // Read block from disk.
     int64_t nTime1 = GetTimeMicros();
     CBlock block;
-    if (!pblock) {
+    if (!pblock) 
+	{
         if (!ReadBlockFromDisk(block, pindexNew))
             return AbortNode(state, "Failed to read block");
         pblock = &block;
     }
+
     // Apply the block atomically to the chain state.
-    int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
+    int64_t nTime2 = GetTimeMicros(); 
+	nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
     LogPrint("bench", "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001, nTimeReadFromDisk * 0.000001);
     {
@@ -2216,24 +2215,31 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     }
     int64_t nTime4 = GetTimeMicros(); nTimeFlush += nTime4 - nTime3;
     LogPrint("bench", "  - Flush: %.2fms [%.2fs]\n", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
-    // Write the chain state to disk, if necessary.
+    
+	// Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
         return false;
     int64_t nTime5 = GetTimeMicros(); nTimeChainState += nTime5 - nTime4;
     LogPrint("bench", "  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001, nTimeChainState * 0.000001);
-    // Remove conflicting transactions from the mempool.
+    
+	// Remove conflicting transactions from the mempool.
     list<CTransaction> txConflicted;
     mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted, !IsInitialBlockDownload());
     mempool.check(pcoinsTip);
-    // Update chainActive & related variables.
+    
+	// Update chainActive & related variables.
     UpdateTip(pindexNew);
-    // Tell wallet about transactions that went from mempool
+    
+	// Tell wallet about transactions that went from mempool
     // to conflicted:
-    BOOST_FOREACH(const CTransaction &tx, txConflicted) {
+    BOOST_FOREACH(const CTransaction &tx, txConflicted) 
+	{
         SyncWithWallets(tx, NULL);
     }
-    // ... and about transactions that got confirmed:
-    BOOST_FOREACH(const CTransaction &tx, pblock->vtx) {
+    
+	// ... and about transactions that got confirmed:
+    BOOST_FOREACH(const CTransaction &tx, pblock->vtx) 
+	{
         SyncWithWallets(tx, pblock);
     }
 
@@ -2771,12 +2777,26 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
                                     __func__, pindexPrev->nHeight + 1, consensusParams.nHeightEffective),
                          REJECT_INVALID, "late-legacy-block");
 
-    // Disallow AuxPow blocks before it is activated.
-    if (!consensusParams.fAllowAuxPow
-        && block.nVersion.IsAuxpow())
-        return state.DoS(100, error("%s : auxpow blocks are not allowed at height %d, parameters effective from %d",
-                                    __func__, pindexPrev->nHeight + 1, consensusParams.nHeightEffective),
-                         REJECT_INVALID, "early-auxpow-block");
+	// Disallow AuxPow blocks before it is activated.
+	if (!consensusParams.fAllowAuxPow
+		&& block.nVersion.IsAuxpow())
+		return state.DoS(100, error("%s : auxpow blocks are not allowed at height %d, parameters effective from %d",
+									__func__, pindexPrev->nHeight + 1, consensusParams.nHeightEffective),
+						 REJECT_INVALID, "early-auxpow-block");
+
+	// Disallow DogeCoin blocks after DTP-hardfork start.
+	if (consensusParams.fAllowDTPHardFork 
+		&& !block.nVersion.IsDTPHardFork())
+		return state.DoS(100, error("%s : Non-DTP blocks are not allowed after height %d, parameters effective from %d",
+									__func__, pindexPrev->nHeight + 1, consensusParams.nHeightEffective),
+						 REJECT_INVALID, "not-dtp-block");
+
+	// Disallow DTP blocks before DTP-hardfork start.
+	if (!consensusParams.fAllowDTPHardFork 
+		&& block.nVersion.IsDTPHardFork())
+		return state.DoS(100, error("%s : DTP blocks are not allowed before height %d, parameters effective from %d",
+									__func__, pindexPrev->nHeight + 1, consensusParams.nHeightEffective),
+						 REJECT_INVALID, "not-dtp-block");
 
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
@@ -2851,7 +2871,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
     CBlockIndex *pindex = NULL;
-    if (miSelf != mapBlockIndex.end()) {
+    if (miSelf != mapBlockIndex.end()) 
+	{
         // Block header is already known.
         pindex = miSelf->second;
         if (ppindex)
@@ -2866,7 +2887,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
 
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
-    if (hash != chainparams.GetConsensus(0).hashGenesisBlock) {
+    if (hash != chainparams.GetConsensus(0).hashGenesisBlock) 
+	{
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
             return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
@@ -4472,33 +4494,52 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
         unsigned int nCount = ReadCompactSize(vRecv);
-        if (nCount > MAX_HEADERS_RESULTS) {
+        if (nCount > MAX_HEADERS_RESULTS) 
+		{
             Misbehaving(pfrom->GetId(), 20);
             return error("headers message size = %u", nCount);
         }
+
         headers.resize(nCount);
-        for (unsigned int n = 0; n < nCount; n++) {
+        for (unsigned int n = 0; n < nCount; n++) 
+		{
             vRecv >> headers[n];
             ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
         }
 
         LOCK(cs_main);
 
-        if (nCount == 0) {
+        if (nCount == 0) 
+		{
             // Nothing interesting. Stop asking this peers for more headers.
             return true;
         }
 
         CBlockIndex *pindexLast = NULL;
-        BOOST_FOREACH(const CBlockHeader& header, headers) {
+		uint32_t uiHeaderCounter = 0;
+        BOOST_FOREACH(const CBlockHeader& header, headers) 
+		{
+			uiHeaderCounter++;
+
             CValidationState state;
-            if (pindexLast != NULL && header.hashPrevBlock != pindexLast->GetBlockHash()) {
+            if (pindexLast != NULL && header.hashPrevBlock != pindexLast->GetBlockHash()) 
+			{
                 Misbehaving(pfrom->GetId(), 20);
                 return error("non-continuous headers sequence");
             }
-            if (!AcceptBlockHeader(header, state, &pindexLast)) {
+            if (!AcceptBlockHeader(header, state, &pindexLast)) 
+			{
                 int nDoS;
-                if (state.IsInvalid(nDoS)) {
+                if (state.IsInvalid(nDoS)) 
+				{
+					// hack for DTP hard fork
+					if (state.GetRejectReason() == "not-dtp-block")
+					{
+						headers.resize(uiHeaderCounter-1);
+						nCount = headers.size();
+						break;
+					}
+
                     if (nDoS > 0)
                         Misbehaving(pfrom->GetId(), nDoS);
                     return error("invalid header received");
@@ -4509,7 +4550,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         if (pindexLast)
             UpdateBlockAvailability(pfrom->GetId(), pindexLast->GetBlockHash());
 
-        if (nCount == MAX_HEADERS_RESULTS && pindexLast) {
+        if (nCount == MAX_HEADERS_RESULTS && pindexLast) 
+		{
             // Headers message had its maximum size; the peer may have more headers.
             // TODO: optimize: if pindexLast is an ancestor of chainActive.Tip or pindexBestHeader, continue
             // from there instead.
@@ -4994,13 +5036,19 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         }
 
         CNodeState &state = *State(pto->GetId());
-        if (state.fShouldBan) {
-            if (pto->fWhitelisted)
-                LogPrintf("Warning: not punishing whitelisted peer %s!\n", pto->addr.ToString());
-            else {
+        if (state.fShouldBan) 
+		{
+			if (pto->fWhitelisted)
+			{
+				LogPrintf("Warning: not punishing whitelisted peer %s!\n", pto->addr.ToString());
+			}
+			else 
+			{
                 pto->fDisconnect = true;
                 if (pto->addr.IsLocal())
-                    LogPrintf("Warning: not banning local peer %s!\n", pto->addr.ToString());
+				{
+					LogPrintf("Warning: not banning local peer %s!\n", pto->addr.ToString());
+				}
                 else
                 {
                     CNode::Ban(pto->addr);

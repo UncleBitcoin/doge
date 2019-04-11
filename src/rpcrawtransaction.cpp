@@ -696,15 +696,23 @@ Value signrawtransaction(const Array& params, bool fHelp)
             (string("NONE|ANYONECANPAY"), int(SIGHASH_NONE|SIGHASH_ANYONECANPAY))
             (string("SINGLE"), int(SIGHASH_SINGLE))
             (string("SINGLE|ANYONECANPAY"), int(SIGHASH_SINGLE|SIGHASH_ANYONECANPAY))
+            (string("ALL|FORKID"), int(SIGHASH_ALL|SIGHASH_FORKID))
+            (string("ALL|FORKID|ANYONECANPAY"), int(SIGHASH_ALL|SIGHASH_FORKID|SIGHASH_ANYONECANPAY))
+            (string("NONE|FORKID"), int(SIGHASH_NONE|SIGHASH_FORKID))
+            (string("NONE|FORKID|ANYONECANPAY"), int(SIGHASH_NONE|SIGHASH_FORKID|SIGHASH_ANYONECANPAY))
+            (string("SINGLE|FORKID"), int(SIGHASH_SINGLE|SIGHASH_FORKID))
+            (string("SINGLE|FORKID|ANYONECANPAY"), int(SIGHASH_SINGLE|SIGHASH_FORKID|SIGHASH_ANYONECANPAY))
             ;
         string strHashType = params[3].get_str();
         if (mapSigHashValues.count(strHashType))
             nHashType = mapSigHashValues[strHashType];
         else
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid sighash param");
+        if (!(nHashType & SIGHASH_FORKID))
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Signature must use SIGHASH_FORKID");
     }
 
-    bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
+    bool fHashSingle = ((nHashType & ~(SIGHASH_ANYONECANPAY | SIGHASH_FORKID)) == SIGHASH_SINGLE);
 
     // Script verification errors
     Array vErrors;

@@ -262,10 +262,10 @@ Value stop(const Array& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "stop\n"
-            "\nStop Dogecoin server.");
+            "\nStop Dogetip server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return "Dogecoin server stopping";
+    return "Dogetip server stopping";
 }
 
 
@@ -612,7 +612,7 @@ void StartRPCThreads()
         unsigned char rand_pwd[32];
         GetRandBytes(rand_pwd, 32);
         uiInterface.ThreadSafeMessageBox(strprintf(
-            _("To use dogecoind, or the -server option to dogecoin-qt, you must set an rpcpassword in the configuration file:\n"
+            _("To use dogetipd, or the -server option to dogetip-qt, you must set an rpcpassword in the configuration file:\n"
               "%s\n"
               "It is recommended you use the following random password:\n"
               "rpcuser=dogecoinrpc\n"
@@ -621,7 +621,7 @@ void StartRPCThreads()
               "The username and password MUST NOT be the same.\n"
               "If the file does not exist, create it with owner-readable-only file permissions.\n"
               "It is also recommended to set alertnotify so you are notified of problems;\n"
-              "for example: alertnotify=echo %%s | mail -s \"Dogecoin Alert\" admin@foo.com\n"),
+              "for example: alertnotify=echo %%s | mail -s \"Dogetip Alert\" admin@foo.com\n"),
                 GetConfigFile().string(),
                 EncodeBase58(&rand_pwd[0],&rand_pwd[0]+32)),
                 "", CClientUIInterface::MSG_ERROR | CClientUIInterface::SECURE);
@@ -1038,7 +1038,7 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
 }
 
 std::string HelpExampleCli(string methodname, string args){
-    return "> dogecoin-cli " + methodname + " " + args + "\n";
+    return "> dogetip-cli " + methodname + " " + args + "\n";
 }
 
 std::string HelpExampleRpc(string methodname, string args){

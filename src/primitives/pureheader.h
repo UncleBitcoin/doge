@@ -20,6 +20,9 @@ private:
     /* Modifiers to the version.  */
     static const int32_t VERSION_AUXPOW = (1 << 8);
 
+	/* Modifiers to the version.  */
+	static const int32_t VERSION_DTP_HARDFORK = (1 << 9);
+
     /** Bits above are reserved for the auxpow chain ID.  */
     static const int32_t VERSION_CHAIN_START = (1 << 16);
 
@@ -85,7 +88,7 @@ public:
 
     /**
      * Check if the auxpow flag is set in the version.
-     * @return True iff this block version is marked as auxpow.
+     * @return True if this block version is marked as auxpow.
      */
     inline bool IsAuxpow() const
     {
@@ -103,6 +106,27 @@ public:
         else
             nVersion &= ~VERSION_AUXPOW;
     }
+
+	/**
+	* Check if the DTP-hardfork flag is set in the version.
+	* @return True if this block version is marked as DTP-hardfork.
+	*/
+	inline bool IsDTPHardFork() const
+	{
+		return nVersion & VERSION_DTP_HARDFORK;
+	}
+
+	/**
+	* Set the bDTPHardFork flag.  This is used for testing.
+	* @param bDTPHardFork Whether to mark DTPHardFork as true.
+	*/
+	inline void SetDTPHardFork(bool bDTPHardFork)
+	{
+		if (bDTPHardFork)
+			nVersion |= VERSION_DTP_HARDFORK;
+		else
+			nVersion &= ~VERSION_DTP_HARDFORK;
+	}
 
     /**
      * Check whether this is a "legacy" block without chain ID.

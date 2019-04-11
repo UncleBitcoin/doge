@@ -24,6 +24,7 @@ enum
     SIGHASH_ALL = 1,
     SIGHASH_NONE = 2,
     SIGHASH_SINGLE = 3,
+    SIGHASH_FORKID = 0x10,
     SIGHASH_ANYONECANPAY = 0x80,
 };
 
@@ -76,9 +77,10 @@ enum
     // (softfork safe, BIP62 rule 6)
     // Note: CLEANSTACK should never be used without P2SH.
     SCRIPT_VERIFY_CLEANSTACK = (1U << 8),
+    SCRIPT_ENABLE_SIGHASH_FORKID = (1U << 17),
 };
 
-uint256 SignatureHash(const CScript &scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType);
+uint256 SignatureHash(const CScript &scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType,uint32_t flags = SCRIPT_ENABLE_SIGHASH_FORKID);
 
 class BaseSignatureChecker
 {

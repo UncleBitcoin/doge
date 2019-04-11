@@ -18,14 +18,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Dogecoin"
-            VALUE "FileDescription",    "Dogecoin Core (GUI node for Dogecoin)"
+            VALUE "CompanyName",        "DogeTip"
+            VALUE "FileDescription",    "DogeTip Core (GUI node for Dogecoin)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "dogecoin-qt"
+            VALUE "InternalName",       "dogetip-qt"
             VALUE "LegalCopyright",     COPYRIGHT_STR
             VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "dogecoin-qt.exe"
-            VALUE "ProductName",        "Dogecoin Core"
+            VALUE "OriginalFilename",   "dogetip-qt.exe"
+            VALUE "ProductName",        "Dogetip Core"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

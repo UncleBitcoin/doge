@@ -402,7 +402,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Unix: ~/.bitcoin
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Dogecoin";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "Dogetip";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -414,10 +414,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Dogecoin";
+    return pathRet / "Dogetip";
 #else
     // Unix
-    return pathRet / ".dogecoin";
+    return pathRet / ".dogetip";
 #endif
 #endif
 }

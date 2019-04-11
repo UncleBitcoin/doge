@@ -21,6 +21,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
 
+	// DTP Super Block
+	if (params.fAllowDTPSuperBlock) 
+		return nProofOfWorkLimit;
+
     // Dogecoin: Special rules for minimum difficulty blocks with Digishield
     if (AllowDigishieldMinDifficultyForBlock(pindexLast, pblock, params))
     {

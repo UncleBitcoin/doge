@@ -15,7 +15,10 @@ namespace Consensus {
  */
 struct Params {
     uint256 hashGenesisBlock;
-    int nSubsidyHalvingInterval;
+	int		nSubsidyAdjustThrehold;
+    int		nSubsidyAdjustInterval;
+	float	flSubsidyAdjustBaseRate;
+	int		nSubsidyInitRewards;
     /** Used to check majorities for block version upgrade */
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
@@ -38,6 +41,10 @@ struct Params {
     bool fAllowAuxPow;
     bool fStrictChainId;
     bool fAllowLegacyBlocks;
+
+	/** DTP hardfork parameters */
+	bool fAllowDTPHardFork;
+	bool fAllowDTPSuperBlock;
 
     /** Height-aware consensus parameters */
     uint32_t nHeightEffective; // When these parameters come into use

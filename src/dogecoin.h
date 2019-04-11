@@ -14,7 +14,7 @@ unsigned int CalculateDogecoinNextWorkRequired(const CBlockIndex* pindexLast, in
  * Check proof-of-work of a block header, taking auxpow into account.
  * @param block The block header.
  * @param params Consensus parameters.
- * @return True iff the PoW is correct.
+ * @return True if the PoW is correct.
  */
 bool CheckAuxPowProofOfWork(const CBlockHeader& block, const Consensus::Params& params);
 

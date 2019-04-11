@@ -103,7 +103,17 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
     /* Initialise the block version.  */
     pblock->nVersion = CBlockHeader::CURRENT_VERSION;
-    pblock->nVersion.SetChainId(chainparams.GetConsensus(0).nAuxpowChainId);
+	pblock->nVersion.SetChainId(chainparams.GetConsensus(0).nAuxpowChainId);
+
+	/* Set Block version for DTP HardFork */
+	{
+		LOCK(cs_main);
+		if (chainparams.GetConsensus(chainActive.Height() + 1).fAllowDTPHardFork)
+		{
+			pblock->nVersion.SetDTPHardFork(true);
+		}
+	}
+
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
@@ -462,12 +472,16 @@ void static BitcoinMiner(CWallet *pwallet)
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
 
-    try {
-        while (true) {
-            if (chainparams.MiningRequiresPeers()) {
+    try 
+	{
+        while (true) 
+		{
+            if (chainparams.MiningRequiresPeers()) 
+			{
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
-                do {
+                do 
+				{
                     bool fvNodesEmpty;
                     {
                         LOCK(cs_vNodes);
@@ -506,7 +520,8 @@ void static BitcoinMiner(CWallet *pwallet)
             uint256 hash;
             uint32_t nNonce = 0;
             char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
-            while (true) {
+            while (true) 
+			{
                 // Check if something found
                 if (ScanHash(pblock, nNonce, &hash, scratchpad))
                 {

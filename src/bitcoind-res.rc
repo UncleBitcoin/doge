@@ -16,14 +16,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Dogecoin"
-            VALUE "FileDescription",    "dogecoind (Dogecoin node with a JSON-RPC server)"
+            VALUE "CompanyName",        "Dogetip"
+            VALUE "FileDescription",    "dogetipd (Dogecoin node with a JSON-RPC server)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "dogecoind"
+            VALUE "InternalName",       "dogetipd"
             VALUE "LegalCopyright",     COPYRIGHT_STR
             VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "dogecoind.exe"
-            VALUE "ProductName",        "dogecoind"
+            VALUE "OriginalFilename",   "dogetipd.exe"
+            VALUE "ProductName",        "dogetipd"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

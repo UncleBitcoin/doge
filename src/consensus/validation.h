@@ -32,16 +32,20 @@ private:
     bool corruptionPossible;
 public:
     CValidationState() : mode(MODE_VALID), nDoS(0), chRejectCode(0), corruptionPossible(false) {}
-    bool DoS(int level, bool ret = false,
-             unsigned char chRejectCodeIn=0, std::string strRejectReasonIn="",
-             bool corruptionIn=false) {
-        chRejectCode = chRejectCodeIn;
-        strRejectReason = strRejectReasonIn;
-        corruptionPossible = corruptionIn;
-        if (mode == MODE_ERROR)
-            return ret;
-        nDoS += level;
-        mode = MODE_INVALID;
+    bool DoS(int			level, 
+			 bool			ret = false,
+             unsigned char	chRejectCodeIn=0, 
+			 std::string	strRejectReasonIn="",
+             bool			corruptionIn=false) 
+	{
+        chRejectCode		= chRejectCodeIn;
+        strRejectReason		= strRejectReasonIn;
+        corruptionPossible	= corruptionIn;
+        
+		if (mode == MODE_ERROR) return ret;
+        
+		nDoS	+= level;
+        mode	 = MODE_INVALID;
         return ret;
     }
     bool Invalid(bool ret = false,

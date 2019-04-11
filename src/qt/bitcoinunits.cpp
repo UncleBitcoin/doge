@@ -45,11 +45,11 @@ QString BitcoinUnits::name(int unit)
 {
     switch(unit)
     {
-    case MBTC: return QString("MDOGE");
-    case kBTC: return QString("kDOGE");
-    case BTC: return QString("DOGE");
-    case mBTC: return QString("mDOGE");
-    case uBTC: return QChar(0x03BC) + QString("DOGE");
+    case MBTC: return QString("MDTP");
+    case kBTC: return QString("kDTP");
+    case BTC: return QString("DTP");
+    case mBTC: return QString("mDTP");
+    case uBTC: return QChar(0x03BC) + QString("DTP");
     default: return QString("???");
     }
 }
@@ -58,11 +58,11 @@ QString BitcoinUnits::description(int unit)
 {
     switch(unit)
     {
-    case MBTC: return tr("Mega-Dogecoins (1,000,000)");
-    case kBTC: return tr("Kilo-Dogecoins (1,000)");
-    case BTC: return tr("Dogecoins");
-    case mBTC: return tr("Milli-Dogecoins (1 / 1,000)");
-    case uBTC: return tr("Micro-Dogecoins (1 / 1,000,000)");
+    case MBTC: return tr("Mega-Dogetips (1,000,000)");
+    case kBTC: return tr("Kilo-Dogetips (1,000)");
+    case BTC: return tr("Dogetips");
+    case mBTC: return tr("Milli-Dogetips (1 / 1,000)");
+    case uBTC: return tr("Micro-Dogetips (1 / 1,000,000)");
     default: return QString("???");
     }
 }
