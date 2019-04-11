@@ -1,15 +1,62 @@
-# Dogetip
-### a social good currency  
-为爱而生
+# Doge
+### 尝试从dogetip研究够狗狗币分叉  
+建立代码库
 
 
-#### Dogetip (DTP) is a scalable, secure and decentralized cryptocurrency inspired by Dogecoin and hard-forked from it.  Hard-fork will happen at Block height 2,123,456 of Dogecoin.   
-Dogetip (DTP)是一个可扩展的、安全的和去中心化的加密货币，受狗狗币启发，并从狗狗币硬分叉而来.      
-在狗狗币的2,123,456高度上进行分叉.  
+#### fork狗狗币代码
+fork Dogetip代码
+将两者对比后结合上传
 
-# Dogetip Core 客户端
-Download here客户端下载:   
-https://github.com/dogetipproject/dogetip/releases/tag/v1.0 
+# 编译结合后的代买 客户端
+## 安装系统依赖
+
+    sudo apt install build-essential libtool autotools-dev automake pkg-config bsdmainutils curl
+编译Win钱包需要
+    
+    sudo apt install g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev nsis
+编译Linux钱包需要
+    
+    sudo apt install gcc-4.8-multilib g++-4.8-multilib
+# 第二步 同步比特币代码
+0.12版
+    
+    https://git.ustclug.org/SilentYang/Bitcoin-Dp
+0.14版
+    
+    https://git.ustclug.org/altcoin/bitcoin
+# 第三步 开始编译
+## 处理编译环境
+
+    cd depends
+编译Win钱包需要
+    
+    make HOST=i686-w64-mingw32                      #32位
+    make HOST=x86_64-w64-mingw32                    #64位
+编译Linux钱包需要
+    
+    make HOST=i686-pc-linux-gnu                     #32位
+    make HOST=x86_64-pc-linux-gnu                   #64位
+## 配置编译好的编译器
+
+    cd ..
+    ./autogen.sh
+以下指令排他，一次只能编译一种系统的钱包。
+
+    ./configure --prefix=`pwd`/depends/i686-w64-mingw32
+    ./configure --prefix=`pwd`/depends/x86_64-w64-mingw32
+    ./configure --prefix=`pwd`/depends/i686-pc-linux-gnu
+    ./configure --prefix=`pwd`/depends/x86_64-pc-linux-gnu
+## 开始编译
+    
+    make
+
+编译Win版本可以通过以下指令生成安装包
+
+    make deploy.
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------
 
 # Mining Pool 矿池  
 1. http://pool.dogetip.org/     
