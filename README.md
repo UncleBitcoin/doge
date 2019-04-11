@@ -7,7 +7,7 @@
 #### fork Dogetip代码
 将两者对比后结合上传
 
-# 编译结合后的代买 客户端
+# 编译结合后的 客户端
 ## 安装系统依赖
 
     sudo apt install build-essential libtool autotools-dev automake pkg-config bsdmainutils curl
